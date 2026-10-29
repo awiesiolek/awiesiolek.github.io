@@ -69,98 +69,161 @@ h1 .cursor { color: var(--green); animation: blink 1.1s steps(1) infinite; }
 .read { color: var(--amber); font-size: .85rem; white-space: nowrap; }
 .empty { display: none; color: var(--dim); }
 footer { position: relative; z-index: 2; text-align: center; color: var(--dim); font-size: .8rem; padding: 0 24px 40px; }
+
+.post { cursor: pointer; }
+.reader { display: none; max-width: 72ch; margin: 0 auto; }
+.reader .meta { margin-top: 40px; color: var(--cyan); font-size: .85rem; }
+.reader h1 { margin: 6px 0 14px; font-size: clamp(1.6rem, 4.8vw, 2.4rem); line-height: 1.25; }
+.reader h1::before { content: none; }
+.reader .chips { margin-bottom: 32px; }
+.reader .body { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: clamp(20px, 4vw, 40px); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); font-size: 1.02rem; line-height: 1.85; }
+.reader .body p { margin: 0 0 1.3em; }
+.reader .body h3 { margin: 1.8em 0 .6em; font-size: 1.15rem; color: var(--green); font-weight: 500; }
+.reader .body h3::before { content: "## "; color: var(--dim); }
+.reader .body pre { margin: 0 0 1.3em; padding: 14px 16px; overflow-x: auto; background: rgba(4,7,5,.8); border: 1px solid var(--line); border-radius: 6px; font-size: .88rem; line-height: 1.6; }
+.reader .body code { color: var(--amber); }
+.reader .body blockquote { margin: 0 0 1.3em; padding-left: 16px; border-left: 2px solid var(--green); color: var(--dim); }
+.pager { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+.pager a { font-size: .85rem; }
+.pager .dim { color: var(--dim); font-weight: 400; display: block; font-size: .75rem; }
 @media (prefers-reduced-motion: reduce) { h1 .cursor { animation: none; } }
 </style>
 </head>
 <body>
 <canvas id="rain" aria-hidden="true"></canvas>
 <main>
-  <div class="top"><a class="btn" href="index.html#blog">&larr; back</a></div>
-
-  <h1>posts<span class="cursor">_</span></h1>
-  <p class="lead">Notes on problems, projects and things I'm learning.</p>
-
-  <div class="filters" id="filters" role="group" aria-label="Filter posts by tag"></div>
-
-  <div class="posts" id="posts">
-    <a class="post" href="#" data-tags="number theory">
-      <time>2026-10-20</time>
-      <h2>Post title about a problem you enjoyed</h2>
-      <p>One-line summary of what the post covers and why it’s interesting. Add a second sentence here if you like, there is room for it.</p>
-      <div class="foot"><div class="chips"><span class="chip s">number theory</span></div><span class="read">read &rarr;</span></div>
-    </a>
-    <a class="post" href="#" data-tags="combinatorics notes">
-      <time>2026-10-06</time>
-      <h2>Another post title</h2>
-      <p>A short teaser. Posts will be Markdown files with LaTeX support.</p>
-      <div class="foot"><div class="chips"><span class="chip s">combinatorics</span><span class="chip t">notes</span></div><span class="read">read &rarr;</span></div>
-    </a>
-    <a class="post" href="#" data-tags="JavaScript Astro">
-      <time>2026-09-15</time>
-      <h2>Building this website</h2>
-      <p>How the matrix background and the blog are made.</p>
-      <div class="foot"><div class="chips"><span class="chip t">JavaScript</span><span class="chip t">Astro</span></div><span class="read">read &rarr;</span></div>
-    </a>
-    <a class="post" href="#" data-tags="geometry">
-      <time>2026-08-30</time>
-      <h2>Placeholder post</h2>
-      <p>Replace with a real title and summary. Newest posts go first.</p>
-      <div class="foot"><div class="chips"><span class="chip s">geometry</span></div><span class="read">read &rarr;</span></div>
-    </a>
-    <a class="post" href="#" data-tags="Python machine learning">
-      <time>2026-08-12</time>
-      <h2>Placeholder post</h2>
-      <p>Another teaser for a project write-up or a short explanation.</p>
-      <div class="foot"><div class="chips"><span class="chip t">Python</span><span class="chip s">machine learning</span></div><span class="read">read &rarr;</span></div>
-    </a>
-    <a class="post" href="#" data-tags="algebra notes">
-      <time>2026-07-25</time>
-      <h2>Placeholder post</h2>
-      <p>One more example so the grid has something to scroll through.</p>
-      <div class="foot"><div class="chips"><span class="chip s">algebra</span><span class="chip t">notes</span></div><span class="read">read &rarr;</span></div>
-    </a>
+  <!-- LIST VIEW -->
+  <div id="listView">
+    <div class="top"><a class="btn" href="index.html#blog">&larr; back</a></div>
+    <h1>posts<span class="cursor">_</span></h1>
+    <p class="lead">Notes on problems, projects and things I'm learning. Click a post to read it.</p>
+    <div class="filters" id="filters" role="group" aria-label="Filter posts by tag"></div>
+    <div class="posts" id="posts"></div>
+    <p class="empty" id="empty">No posts with this tag yet.</p>
+    <a class="btn bottom" href="index.html#blog">&larr; back</a>
   </div>
-  <p class="empty" id="empty">No posts with this tag yet.</p>
 
-  <a class="btn bottom" href="index.html#blog">&larr; back</a>
+  <!-- READER VIEW -->
+  <article class="reader" id="readerView">
+    <div class="top"><a class="btn js-all" href="posts.html">&larr; all posts</a></div>
+    <div class="meta" id="rMeta"></div>
+    <h1 id="rTitle"></h1>
+    <div class="chips" id="rChips"></div>
+    <div class="body" id="rBody"></div>
+    <nav class="pager" id="rPager" aria-label="More posts"></nav>
+    <a class="btn bottom js-all" href="posts.html">&larr; all posts</a>
+  </article>
 </main>
 <footer>© 2026 @awiesiolek</footer>
 
 <script>
 (function () {
-  var posts = Array.prototype.slice.call(document.querySelectorAll('.post'));
-  var box = document.getElementById('filters');
-  var empty = document.getElementById('empty');
-  var tags = [];
-  posts.forEach(function (p) {
-    Array.prototype.forEach.call(p.querySelectorAll('.chip'), function (c) {
-      var t = c.textContent.trim();
-      if (tags.indexOf(t) < 0) tags.push(t);
-    });
-  });
-  function mk(label, value) {
-    var b = document.createElement('button');
-    b.type = 'button'; b.className = 'filter'; b.textContent = label;
-    b.setAttribute('aria-pressed', 'false'); b.dataset.value = value;
-    b.addEventListener('click', function () { apply(value); });
-    box.appendChild(b);
+  // Newest first. Body is plain HTML: <p>, <h3>, <pre><code>, <blockquote>.
+  var POSTS = [
+    { slug: 'number-theory-problem', date: '2026-10-20', title: 'Post title about a problem you enjoyed',
+      summary: 'One-line summary of what the post covers and why it’s interesting. Add a second sentence here if you like, there is room for it.',
+      tags: [['number theory','s']],
+      body: '<p>This is where the full post goes. Start with the problem statement, then the idea that unlocked it, then the clean solution.</p><h3>The problem</h3><p>State it plainly, so a reader who skipped the olympiad years can still follow.</p><blockquote>Let n be a positive integer such that &hellip;</blockquote><h3>The idea</h3><p>Explain the observation that made it click. Posts will later be Markdown files with LaTeX support, so formulas will render properly.</p><pre><code>n^2 + n + 41  is prime for n = 0..39</code></pre><h3>Takeaway</h3><p>One paragraph on what you would remember next time.</p>' },
+    { slug: 'another-post', date: '2026-10-06', title: 'Another post title',
+      summary: 'A short teaser. Posts will be Markdown files with LaTeX support.',
+      tags: [['combinatorics','s'],['notes','t']],
+      body: '<p>A second example post. Replace this with your real text.</p><p>Paragraphs are set at a comfortable line length with generous spacing, so longer posts stay easy to read on both desktop and phone.</p>' },
+    { slug: 'building-this-website', date: '2026-09-15', title: 'Building this website',
+      summary: 'How the matrix background and the blog are made.',
+      tags: [['JavaScript','t'],['Astro','t']],
+      body: '<p>The background is a canvas with falling maths glyphs and the occasional prime. The text sits on a soft vignette so it always stays readable.</p><pre><code>ctx.fillStyle = \'rgba(6,10,8,0.09)\';\nctx.fillRect(0, 0, w, h);</code></pre><p>That one translucent fill each frame is what makes the trails fade.</p>' },
+    { slug: 'placeholder-geometry', date: '2026-08-30', title: 'Placeholder post',
+      summary: 'Replace with a real title and summary. Newest posts go first.',
+      tags: [['geometry','s']], body: '<p>Placeholder text.</p>' },
+    { slug: 'placeholder-ml', date: '2026-08-12', title: 'Placeholder post',
+      summary: 'Another teaser for a project write-up or a short explanation.',
+      tags: [['Python','t'],['machine learning','s']], body: '<p>Placeholder text.</p>' },
+    { slug: 'placeholder-algebra', date: '2026-07-25', title: 'Placeholder post',
+      summary: 'One more example so the grid has something to scroll through.',
+      tags: [['algebra','s'],['notes','t']], body: '<p>Placeholder text.</p>' }
+  ];
+
+  var listView = document.getElementById('listView'), readerView = document.getElementById('readerView');
+  var grid = document.getElementById('posts'), box = document.getElementById('filters'), empty = document.getElementById('empty');
+  var baseTitle = document.title, filter = '';
+
+  function chips(tags) {
+    return tags.map(function (t) { return '<span class="chip ' + t[1] + '">' + t[0] + '</span>'; }).join('');
   }
-  mk('all', '');
-  tags.forEach(function (t) { mk(t, t); });
-  function apply(v) {
-    var shown = 0;
-    posts.forEach(function (p) {
-      var chips = Array.prototype.map.call(p.querySelectorAll('.chip'), function (c) { return c.textContent.trim(); });
-      var ok = !v || chips.indexOf(v) >= 0;
-      p.style.display = ok ? '' : 'none';
-      if (ok) shown++;
+
+  // list
+  grid.innerHTML = POSTS.map(function (p) {
+    return '<a class="post" href="#' + p.slug + '" data-slug="' + p.slug + '"><time>' + p.date + '</time><h2>' + p.title + '</h2><p>' + p.summary +
+      '</p><div class="foot"><div class="chips">' + chips(p.tags) + '</div><span class="read">read &rarr;</span></div></a>';
+  }).join('');
+  var tiles = Array.prototype.slice.call(grid.children);
+
+  var all = [];
+  POSTS.forEach(function (p) { p.tags.forEach(function (t) { if (all.indexOf(t[0]) < 0) all.push(t[0]); }); });
+  [''].concat(all).forEach(function (v) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'filter'; b.textContent = v || 'all'; b.dataset.value = v;
+    b.addEventListener('click', function () { applyFilter(v); });
+    box.appendChild(b);
+  });
+  function applyFilter(v) {
+    filter = v; var shown = 0;
+    POSTS.forEach(function (p, i) {
+      var ok = !v || p.tags.some(function (t) { return t[0] === v; });
+      tiles[i].style.display = ok ? '' : 'none'; if (ok) shown++;
     });
     empty.style.display = shown ? 'none' : 'block';
-    Array.prototype.forEach.call(box.children, function (b) {
-      b.setAttribute('aria-pressed', String(b.dataset.value === v));
-    });
+    Array.prototype.forEach.call(box.children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.value === v)); });
   }
-  apply('');
+
+  // reader
+  function link(p, dir) {
+    return p ? '<a href="#' + p.slug + '" data-slug="' + p.slug + '"><span class="dim">' + dir + '</span>' + p.title + '</a>' : '<span></span>';
+  }
+  var current = null;
+  function show(slug) {
+    var i = -1;
+    POSTS.forEach(function (p, n) { if (p.slug === slug) i = n; });
+    current = i < 0 ? '' : slug;
+    if (i < 0) {
+      readerView.style.display = 'none'; listView.style.display = 'block';
+      document.title = baseTitle;
+    } else {
+      var p = POSTS[i];
+      document.getElementById('rMeta').textContent = p.date;
+      document.getElementById('rTitle').textContent = p.title;
+      document.getElementById('rChips').innerHTML = chips(p.tags);
+      document.getElementById('rBody').innerHTML = p.body;
+      document.getElementById('rPager').innerHTML = link(POSTS[i + 1], '\u2190 older') + link(POSTS[i - 1], 'newer \u2192');
+      listView.style.display = 'none'; readerView.style.display = 'block';
+      document.title = p.title + ' | ' + baseTitle;
+    }
+    window.scrollTo(0, 0);
+  }
+  // Navigate by click (works everywhere), and keep the URL hash in sync when the browser allows it.
+  function go(slug) {
+    try {
+      if (slug) { location.hash = slug; }
+      else if (location.hash) { history.pushState(null, '', location.pathname + location.search); }
+    } catch (e) {}
+    show(slug);
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('[data-slug], .js-all') : null;
+    if (!a) return;
+    e.preventDefault();
+    go(a.getAttribute('data-slug') || '');
+  });
+  window.addEventListener('hashchange', function () {
+    var slug = location.hash.slice(1);
+    if (slug !== current) show(slug);
+  });
+  window.addEventListener('popstate', function () {
+    var slug = location.hash.slice(1);
+    if (slug !== current) show(slug);
+  });
+  applyFilter('');
+  show(location.hash.slice(1));
 })();
 </script>
 <script>
