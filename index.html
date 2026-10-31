@@ -146,8 +146,13 @@ footer { position: relative; z-index: 2; text-align: center; color: var(--dim); 
 <script>
 (function () {
   var c = document.getElementById('rain'), ctx = c.getContext('2d');
-  var glyphs = '0123456789∑∫π∞√∂∇∈∀∃≤≥≠±λθφΩ{}[]=+-<>'.split('');
-  var primes = ['2','3','5','7','11','13','17','19','23','29','31','37','41'];
+  var fragments = [
+    '∑', '∫', 'π', '∞', '√', '∂', '∇', '∈', '∀', '∃', '≤', '≥', '≠', '±',
+    'λx.x', 'E[X]', 'P(A|B)', '∃ bug', '∫ bug dx', 'NaN', '404≠∞',
+    'P=NP?', 'O(n²)', 'git push', 'rm -rf /', 'sudo make', 'qunat',
+    'dS=μSdt+σSdW', 'C=SΦ(d₁)-Ke⁻ʳᵀΦ(d₂)', 'σ²', 'hedge()',
+    'rand()', 'while(true)', 'segfault', 'TODO → Nobel'
+  ];
   var size = 16, cols, drops, w, h, dpr;
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -164,7 +169,13 @@ footer { position: relative; z-index: 2; text-align: center; color: var(--dim); 
   }
 
   function pick() {
-    return Math.random() < 0.06 ? primes[Math.floor(Math.random() * primes.length)] : glyphs[Math.floor(Math.random() * glyphs.length)];
+    return fragments[Math.floor(Math.random() * fragments.length)];
+  }
+
+  function drawVertical(text, x, y) {
+    for (var i = 0; i < text.length; i++) {
+      ctx.fillText(text.charAt(i), x, y - i * size);
+    }
   }
 
   function step() {
@@ -174,9 +185,9 @@ footer { position: relative; z-index: 2; text-align: center; color: var(--dim); 
       var y = drops[i] * size;
       if (y > 0) {
         ctx.fillStyle = 'rgba(61,220,132,0.35)';
-        ctx.fillText(pick(), i * size, y - size);
+        drawVertical(pick(), i * size, y - size);
         ctx.fillStyle = 'rgba(170,255,205,0.85)';
-        ctx.fillText(pick(), i * size, y);
+        drawVertical(pick(), i * size, y);
       }
       if (y > h && Math.random() > 0.975) drops[i] = Math.random() * -20;
       drops[i] += 0.5 + (i % 5) * 0.08;
